@@ -1,19 +1,21 @@
 <script>
   import MapFrame from "./MapFrame.svelte";
   import GeoWorld from "./GeoWorld.svelte";
+  import countries from "../data/countries.json";
+  import { topoBopValues, selectedPeriod } from "../stores/bopStore.js";
+
 
   let hovered = null;
   let selected = null;
 
-  function onHover(evt) {
-    hovered = evt.detail;
+  const countryLookup = {};
+  for (const c of countries) {
+    countryLookup[c.id] = c;
   }
 
-  function onSelect(evt) {
-    selected = evt.detail;
-  }
-
+  $: bopValues = $topoBopValues;
   function id(f) {
+    console.log(f)
     return f?.id ?? "unknown";
   }
 </script>
@@ -25,20 +27,17 @@
       {height}
       {hovered}
       {selected}
-      on:hover={onHover}
-      on:select={onSelect}
+      dataValues={bopValues}
+      on:hover={(e) => (hovered = e.detail)}
+      on:select={(e) => (selected = e.detail)}
     />
   </MapFrame>
 
   <div class="info">
     <h2>Country Info</h2>
 
-    {#if hovered}
-      <p><strong>Hover:</strong> {id(hovered)}</p>
-    {/if}
-
     {#if selected}
-      <p><strong>Selected:</strong> {id(selected)}</p>
+      <p><strong>Selected:</strong> {hovered.properties.name}</p>
     {:else}
       <p>No country selected.</p>
     {/if}
@@ -59,7 +58,7 @@
 
   @media (max-width: 1000px) {
     .layout {
-      grid-template-columns: 1fr; 
+      grid-template-columns: 1fr;
       grid-template-rows: auto auto;
     }
   }
