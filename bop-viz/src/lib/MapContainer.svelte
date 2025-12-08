@@ -2,11 +2,17 @@
   import MapFrame from "./MapFrame.svelte";
   import GeoWorld from "./GeoWorld.svelte";
   import countries from "../data/countries.json";
-  import { topoBopValues, selectedPeriod } from "../stores/bopStore.js";
+  import { topoBopValues, selectedPeriod, allPeriods } from "../stores/bopStore.js";
 
 
   let hovered = null;
   let selected = null;
+
+  $: hoveredInfo = hovered ? countryLookup[hovered.id] : null;
+  $: selectedInfo = selected ? countryLookup[selected.id] : null;
+
+  $: hoveredValue = hovered ? bopValues[hovered.id] : null;
+  $: selectedValue = selected ? bopValues[selected.id] : null;
 
   const countryLookup = {};
   for (const c of countries) {
@@ -15,10 +21,20 @@
 
   $: bopValues = $topoBopValues;
   function id(f) {
-    console.log(f)
-    return f?.id ?? "unknown";
+    console.log(f);
   }
 </script>
+
+<div class="controls">
+  <label>
+    Quarter:
+    <select bind:value={$selectedPeriod}>
+      {#each $allPeriods as period}
+        <option value={period}>{period}</option>
+      {/each}
+    </select>
+  </label>
+</div>
 
 <div class="layout">
   <MapFrame let:width let:height>
@@ -37,7 +53,11 @@
     <h2>Country Info</h2>
 
     {#if selected}
-      <p><strong>Selected:</strong> {hovered.properties.name}</p>
+      <p><strong>Selected:</strong> {selected.properties.name}</p>
+      <p>
+        <strong>BOP:</strong>
+        {selectedValue !== null ? selectedValue : "No data"}
+      </p>
     {:else}
       <p>No country selected.</p>
     {/if}
@@ -62,4 +82,15 @@
       grid-template-rows: auto auto;
     }
   }
+
+    .controls {
+    margin-bottom: 1rem;
+    font-family: system-ui, sans-serif;
+  }
+
+  select {
+    padding: 0.2rem 0.4rem;
+    font-size: 0.9rem;
+  }
 </style>
+

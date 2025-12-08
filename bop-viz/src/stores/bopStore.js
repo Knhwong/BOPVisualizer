@@ -1,11 +1,12 @@
-import { writable, derived } from "svelte/store";
+import { writable, readable, derived } from "svelte/store";
 import countries from "../data/countries.json";
 import bopRaw from "../data/bop.json";
 
-//
-// 1. Selected period
-//
-export const selectedPeriod = writable("2021-Q1");
+export const allPeriods = readable(
+  [...new Set(bopRaw.map(r => r.period))].sort()
+);
+
+export const selectedPeriod = writable();
 
 //
 // 2. Map ISO3 → value for the selected period

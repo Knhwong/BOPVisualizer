@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <title>BOP Map</title>
+  <style>
+    body {
+      margin: 0;
+      background: #222;
+    }
+
+    svg {
+      width: 100vw;
+      height: 100vh;
+      display: block;
+    }
+  </style>
+
+  <!-- Load D3 v7 and TopoJSON -->
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="https://unpkg.com/topojson-client@3"></script>
+  <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+  <script src="https://cdn.jsdelivr.net/npm/d3-choropleth@1"></script>
+</head>
+
+<body>
+  <svg id="map"></svg>
+
+  <script>
+    const svg = d3.select("#map");
+
+    async function loadData() {
+
+      const world = await d3.json("countries2.geojson");
+      const rows = await d3.csv("bop_data.csv");
+      const projection = d3.geoMercator().fitSize([window.innerWidth, window.innerHeight], world);
+      const path = d3.geoPath().projection(projection);
+      rows.forEach(r => {
+        r.iso3 = r.SERIES_CODE.split(".")[0];
+      });
+
+      const bop2022 = {};
+      rows.forEach(r => {
+        if (r.iso3.length === 3 && /^[A-Z]+$/.test(r.iso3)) {
+          const val = +r["2022"];
+          if (!isNaN(val)) bop2022[r.iso3] = val;
+        }
+      });
+
+      world.features.forEach(c => { // world-atlas ISO3
+        c.properties.bop = bop2022[c.properties["ISO3166-1-Alpha-3"]];
+      });
+
+      const values = world.features
+        .map(f => f.properties.bop)
+        .filter(v => v != null);
+
+      const min = d3.min(values);
+      const max = d3.max(values);
+
+      const absmax = Math.max(Math.abs(min), Math.abs(max));
+
+
+      const log = d3.scaleSymlog()
+        .domain([-absmax, absmax])
+        .range([-1, 1])       // IMPORTANT!
+        .constant(1);
+
+      const color = d3.scaleDiverging()
+        .domain([-1, 0, 1])
+        .interpolator(d3.interpolateRdBu);
+
+      svg.selectAll("path")
+        .data(world.features)
+        .enter()
+        .append("path")
+        .attr("d", path)
+        .attr("stroke", "#333")
+        .attr("fill", d => {
+          const v = d.properties.bop;
+          if (v == null) return "#aaa";
+          const lv = log(v);       // log transform → output in [-1,1]
+          return color(lv);
+        });
+    }
+    loadData();
+
+  </script>
+</body>
+
+</html>

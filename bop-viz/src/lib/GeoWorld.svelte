@@ -12,7 +12,7 @@
 
     export let hovered = null;
     export let selected = null;
-    export let dataValues = {}; // id → BOP value
+    $: dataValues = {}; // id → BOP value
 
     const colorScale = scaleSequential(interpolateRdBu).domain([200, -200]);
 
